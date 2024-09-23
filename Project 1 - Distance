@@ -1,0 +1,65 @@
+#include <NewPing.h>
+#include <Grove_LED_Bar.h>
+
+//Ultrasonic Sensor - Input
+#define TRIG_PIN 7 //Sound out "Transmitter"
+#define ECHO_PIN 7 //Sound in "Reciever"
+#define MAX_DISTANCE 40  // Maximum distance to measure in cm
+// Initialize NewPing library and sensor with trigger, echo pins, and max distance defined from above variables
+NewPing sonar(TRIG_PIN, ECHO_PIN, MAX_DISTANCE); 
+
+
+//Buzzer - Ouput
+#define BUZZER_PIN 5
+
+//LED Bar - Output
+#define LED_PIN 8
+Grove_LED_Bar bar(9, LED_PIN, 0, LED_BAR_10); // Clock pin, Data pin, Orientation for 10-segment LED bar
+
+
+//Setup runs once and helps to setup the buzzer and LED bar as outputs
+void setup() {
+  Serial.begin(9600);
+  pinMode(BUZZER_PIN, OUTPUT);
+  bar.begin();  
+}
+
+void loop() {
+  int current_distance = detectDistance();
+
+  lightLEDBar(current_distance);
+  
+  activateBuzzer(current_distance);
+
+  delay(250); // Delay for sensor to refresh
+}
+
+
+int detectDistance(){
+  // Measure distance in centimeters
+  int distance = sonar.ping_cm();  // Returns distance in cm
+  // Display distance in the Serial Monitor
+  Serial.println("The distance to obstacles in front is: ");
+  Serial.print(distance); 
+  Serial.println(" cm");
+  //Return the distance value to the loop function
+  return distance;
+}
+
+
+void lightLEDBar(int distance) {
+  // Map distance to number of LEDs lit on the LED bar using ratios
+  int numLEDs = map(distance, 0, MAX_DISTANCE, 1, 10); // Map distance to LED bar levels (Value comes in from 0cm to MAX_Distance and is returned as a value between 0-10)
+  // Set the number of LEDs to light up based on the distance
+  bar.setLevel(numLEDs);
+}
+
+
+void activateBuzzer(int distance) {
+if (distance > 0 && distance < MAX_DISTANCE) { // If object is closer than the MAX_DISTANCE
+    int beepDelay = map(distance, 0, MAX_DISTANCE, 50, 500); // Beep faster as distance decreases
+    digitalWrite(BUZZER_PIN, HIGH); // No beep when object is far away
+    delay(beepDelay);
+    digitalWrite(BUZZER_PIN, LOW);
+  }
+}
